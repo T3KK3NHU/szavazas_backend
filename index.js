@@ -234,6 +234,31 @@ app.delete('/fiokom', auth, async (req, res) => {
     }
 })
 
+app.put('/jelszo', auth, async (req, res) => {
+    const { jelenlegiJelszo, regiJelszo } = req.body
+    if (!jelenlegiJelszo || !regiJelszo) {
+        return res.status(400).json({ message: "hianyzo bemeneti adatok" })
+    }
+    try {
+        const sql = 'SELECT * FROM felhasznalok  WHERE id =?'
+        const [rows] = await db.query(sql, [req.user.id]);
+        const user = rows[0];
+        const hashJelszo = user.jelszo;
+
+        const ok = bcrypt.compare(jelenlegiJelszo, hashJelszo)
+        if(!ok){
+            return res.status(401).json({message:"hibas jelszot adtal meg"})
+        }
+        const hashUjJelszo = await bcrypt.hash(hashUjJelszo, 10)
+        const sql2 = 'UPDATE felhasznalok SET jelszo = ? WHERE id = ?'
+        await db.query(sql2, [ujemail, req.user.id])
+        res.status(200).json({ message: "sikeres jelszo valtoztatas" })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "szerverhiba" })
+    }
+})
+
 // --- szerver elinditás ---
 app.listen(PORT, HOST, () => {
     console.log(`API Fut: http://${HOST}:${PORT}/`)
